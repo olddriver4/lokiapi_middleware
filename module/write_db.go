@@ -21,18 +21,13 @@ func Conninflux() client.Client {
 	return cli
 }
 
-func Writeinflux(cli client.Client, modules string, fields map[string]interface{}) {
+func Writeinflux(cli client.Client, modules string, tags map[string]string, fields map[string]interface{}) {
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  config.ReadConfig("influx.db").(string),        //数据库名称
 		Precision: config.ReadConfig("influx.precision").(string), //时间精度（很重要，不然循环写入会覆盖之前的数据，influxdb是以时间戳为单位）
 	})
 	if err != nil {
 		logrus.Error("Connection influxdb fail :", err)
-	}
-
-	// 写入metrics表
-	tags := map[string]string{
-		"table": modules,
 	}
 
 	server, err := client.NewPoint(modules, tags, fields, time.Now()) //并插入对应字段和tag，如果表不存在自动创建
@@ -44,7 +39,7 @@ func Writeinflux(cli client.Client, modules string, fields map[string]interface{
 	if err != nil {
 		logrus.Error("Inster fields fail: ", err)
 	} else {
-		requestLogger := logrus.WithFields(logrus.Fields{"table": modules, "fields": fields})
+		requestLogger := logrus.WithFields(logrus.Fields{"table": modules, "fields": tags})
 		requestLogger.Info("insert sucess.")
 	}
 }

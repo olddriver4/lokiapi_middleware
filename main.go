@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"loki_client/config"
 	"loki_client/module"
+	"strconv"
 	"time"
 )
 
@@ -17,7 +18,7 @@ func main() {
 		go func() { //goruntine 并行执行
 			for _, host := range hosts {
 				logqls := make(map[string]string)
-
+				host := host.(string)
 				//请求loki query入库
 				logqls["access"] = fmt.Sprintf("query=topk(10, sum by (remote_addr, geoip_country_name, geoip_city_name) (count_over_time({host=~\"%s\"} | json | __error__=\"\" [%s])))", host, timelimit)
 				logqls["pages"] = fmt.Sprintf("query=topk(10, sum by (request_uri) (count_over_time({host=~\"%s\"} !~ `\\.ico|\\.svg|\\.css|\\.png|\\.txt|\\.js|\\.xml` | json | status = 200 and request_uri != \"\" | __error__=\"\" [%s])))", host, timelimit)
@@ -31,10 +32,10 @@ func main() {
 
 				for modules, logql := range logqls {
 					metrics := *module.Loki_api(url, logql)
-					fmt.Println(logql)
 					if modules == "access" {
 						for _, v := range metrics.([]interface{}) {
 							value := map[string]string{}
+							value_int := map[string]int{}
 							for k1, v1 := range v.(map[string]interface{}) {
 								if k1 == "metric" {
 									vv1 := v1.(map[string]interface{})
@@ -46,23 +47,29 @@ func main() {
 								if k1 == "value" {
 									vv1 := v1.([]interface{})
 									value["request_ip_sum"] = vv1[1].(string)
+									value_int["request_ip_sum"], _ = strconv.Atoi(vv1[1].(string))
 								}
 							}
 
-							fields := map[string]interface{}{
+							// 写入metrics表
+							tags := map[string]string{
+								"host":               host,
 								"geoip_city_name":    value["geoip_city_name"],
 								"geoip_country_name": value["geoip_country_name"],
 								"remote_addr":        value["remote_addr"],
-								"request_ip_sum":     value["request_ip_sum"],
-								"host":               host,
+							}
+
+							fields := map[string]interface{}{
+								"request_ip_sum": value_int["request_ip_sum"],
 							}
 							conn := module.Conninflux()
-							module.Writeinflux(conn, modules, fields)
+							module.Writeinflux(conn, modules, tags, fields)
 							conn.Close()
 						}
 					} else if modules == "pages" {
 						for _, v := range metrics.([]interface{}) {
 							value := map[string]string{}
+							value_int := map[string]int{}
 							for k1, v1 := range v.(map[string]interface{}) {
 								if k1 == "metric" {
 									vv1 := v1.(map[string]interface{})
@@ -71,21 +78,26 @@ func main() {
 
 								if k1 == "value" {
 									vv1 := v1.([]interface{})
-									value["request_uri_sum"] = vv1[1].(string)
+									value_int["request_uri_sum"], _ = strconv.Atoi(vv1[1].(string))
 								}
 							}
+
+							// 写入metrics表
+							tags := map[string]string{
+								"host":        host,
+								"request_uri": value["request_uri"],
+							}
 							fields := map[string]interface{}{
-								"request_uri":     value["request_uri"],
-								"request_uri_sum": value["request_uri_sum"],
-								"host":            host,
+								"request_uri_sum": value_int["request_uri_sum"],
 							}
 							conn := module.Conninflux()
-							module.Writeinflux(conn, modules, fields)
+							module.Writeinflux(conn, modules, tags, fields)
 							conn.Close()
 						}
 					} else if modules == "referers" {
 						for _, v := range metrics.([]interface{}) {
 							value := map[string]string{}
+							value_int := map[string]int{}
 							for k1, v1 := range v.(map[string]interface{}) {
 								if k1 == "metric" {
 									vv1 := v1.(map[string]interface{})
@@ -94,21 +106,26 @@ func main() {
 
 								if k1 == "value" {
 									vv1 := v1.([]interface{})
-									value["http_referer_sum"] = vv1[1].(string)
+									value_int["http_referer_sum"], _ = strconv.Atoi(vv1[1].(string))
 								}
 							}
+
+							// 写入metrics表
+							tags := map[string]string{
+								"host":         host,
+								"http_referer": value["http_referer"],
+							}
 							fields := map[string]interface{}{
-								"http_referer":     value["http_referer"],
-								"http_referer_sum": value["http_referer_sum"],
-								"host":             host,
+								"http_referer_sum": value_int["http_referer_sum"],
 							}
 							conn := module.Conninflux()
-							module.Writeinflux(conn, modules, fields)
+							module.Writeinflux(conn, modules, tags, fields)
 							conn.Close()
 						}
 					} else if modules == "useragents" {
 						for _, v := range metrics.([]interface{}) {
 							value := map[string]string{}
+							value_int := map[string]int{}
 							for k1, v1 := range v.(map[string]interface{}) {
 								if k1 == "metric" {
 									vv1 := v1.(map[string]interface{})
@@ -117,55 +134,65 @@ func main() {
 
 								if k1 == "value" {
 									vv1 := v1.([]interface{})
-									value["http_user_agent_sum"] = vv1[1].(string)
+									value_int["http_user_agent_sum"], _ = strconv.Atoi(vv1[1].(string))
 								}
 							}
+							// 写入metrics表
+							tags := map[string]string{
+								"host":            host,
+								"http_user_agent": value["http_user_agent"],
+							}
 							fields := map[string]interface{}{
-								"http_user_agent":     value["http_user_agent"],
-								"http_user_agent_sum": value["http_user_agent_sum"],
-								"host":                host,
+								"http_user_agent_sum": value_int["http_user_agent_sum"],
 							}
 							conn := module.Conninflux()
-							module.Writeinflux(conn, modules, fields)
+							module.Writeinflux(conn, modules, tags, fields)
 							conn.Close()
 						}
 					} else if modules == "total_request" {
 						for _, v := range metrics.([]interface{}) {
-							value := map[string]string{}
+							value_int := map[string]int{}
 							for k1, v1 := range v.(map[string]interface{}) {
 								if k1 == "value" {
 									vv1 := v1.([]interface{})
-									value["request_sum"] = vv1[1].(string)
+									value_int["request_sum"], _ = strconv.Atoi(vv1[1].(string))
 								}
 							}
+							// 写入metrics表
+							tags := map[string]string{
+								"host": host,
+							}
 							fields := map[string]interface{}{
-								"request_sum": value["request_sum"],
-								"host":        host,
+								"request_sum": value_int["request_sum"],
 							}
 							conn := module.Conninflux()
-							module.Writeinflux(conn, modules, fields)
+							module.Writeinflux(conn, modules, tags, fields)
 							conn.Close()
 						}
 					} else if modules == "realtime_visitors" {
 						for _, v := range metrics.([]interface{}) {
-							value := map[string]string{}
+							value_int := map[string]int{}
 							for k1, v1 := range v.(map[string]interface{}) {
 								if k1 == "value" {
 									vv1 := v1.([]interface{})
-									value["realtime_visitors_sum"] = vv1[1].(string)
+									value_int["realtime_visitors_sum"], _ = strconv.Atoi(vv1[1].(string))
 								}
 							}
+							// 写入metrics表
+							tags := map[string]string{
+								"host": host,
+							}
 							fields := map[string]interface{}{
-								"realtime_visitors_sum": value["realtime_visitors_sum"],
-								"host":                  host,
+								"realtime_visitors_sum": value_int["realtime_visitors_sum"],
 							}
 							conn := module.Conninflux()
-							module.Writeinflux(conn, modules, fields)
+							module.Writeinflux(conn, modules, tags, fields)
 							conn.Close()
 						}
 					} else if modules == "request_status_code" {
 						for _, v := range metrics.([]interface{}) {
 							value := map[string]string{}
+							value_int := map[string]int{}
 
 							for k1, v1 := range v.(map[string]interface{}) {
 								if k1 == "metric" {
@@ -175,21 +202,25 @@ func main() {
 
 								if k1 == "value" {
 									vv1 := v1.([]interface{})
-									value["status_sum"] = vv1[1].(string)
+									value_int["status_sum"], _ = strconv.Atoi(vv1[1].(string))
 								}
 							}
+							// 写入metrics表
+							tags := map[string]string{
+								"host":   host,
+								"status": value["status"],
+							}
 							fields := map[string]interface{}{
-								"status":     value["status"],
-								"status_sum": value["status_sum"],
-								"host":       host,
+								"status_sum": value_int["status_sum"],
 							}
 							conn := module.Conninflux()
-							module.Writeinflux(conn, modules, fields)
+							module.Writeinflux(conn, modules, tags, fields)
 							conn.Close()
 						}
 					} else if modules == "geoipcode" {
 						for _, v := range metrics.([]interface{}) {
 							value := map[string]string{}
+							value_int := map[string]int{}
 
 							for k1, v1 := range v.(map[string]interface{}) {
 								if k1 == "metric" {
@@ -199,39 +230,40 @@ func main() {
 
 								if k1 == "value" {
 									vv1 := v1.([]interface{})
-									value["geoip_country_code_num"] = vv1[1].(string)
+									value_int["geoip_country_code_num"], _ = strconv.Atoi(vv1[1].(string))
 								}
 							}
+							// 写入metrics表
+							tags := map[string]string{
+								"host":               host,
+								"geoip_country_code": value["geoip_country_code"],
+							}
 							fields := map[string]interface{}{
-								"geoip_country_code":     value["geoip_country_code"],
-								"geoip_country_code_num": value["geoip_country_code_num"],
-								"host":                   host,
+								"geoip_country_code_num": value_int["geoip_country_code_num"],
 							}
 							conn := module.Conninflux()
-							module.Writeinflux(conn, modules, fields)
+							module.Writeinflux(conn, modules, tags, fields)
 							conn.Close()
 						}
 					} else if modules == "request_time" {
 						for _, v := range metrics.([]interface{}) {
-							value := map[string]string{}
+							value_int := map[string]int{}
 
 							for k1, v1 := range v.(map[string]interface{}) {
-								if k1 == "metric" {
-									vv1 := v1.(map[string]interface{})
-									value["host"] = vv1["host"].(string)
-								}
-
 								if k1 == "value" {
 									vv1 := v1.([]interface{})
-									value["request_time"] = vv1[1].(string)
+									value_int["request_time"], _ = strconv.Atoi(vv1[1].(string))
 								}
 							}
+							// 写入metrics表
+							tags := map[string]string{
+								"host": host,
+							}
 							fields := map[string]interface{}{
-								"host":         value["host"],
-								"request_time": value["request_time"],
+								"request_time": value_int["request_time"],
 							}
 							conn := module.Conninflux()
-							module.Writeinflux(conn, modules, fields)
+							module.Writeinflux(conn, modules, tags, fields)
 							conn.Close()
 						}
 					}
