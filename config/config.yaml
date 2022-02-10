@@ -1,5 +1,5 @@
 timer:
-  second: 60  #配置最好不要小于linux time_wait 回收时间
+  second: 300  #配置最好不要小于linux time_wait 回收时间
 
 influx:
   url: 
