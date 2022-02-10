@@ -247,12 +247,12 @@ func main() {
 						}
 					} else if modules == "request_time" {
 						for _, v := range metrics.([]interface{}) {
-							value_int := map[string]int{}
+							value_int := map[string]float64{}
 
 							for k1, v1 := range v.(map[string]interface{}) {
 								if k1 == "value" {
 									vv1 := v1.([]interface{})
-									value_int["request_time"], _ = strconv.Atoi(vv1[1].(string))
+									value_int["request_time"], _ = strconv.ParseFloat(vv1[1].(string), 64)
 								}
 							}
 							// 写入metrics表
