@@ -50,6 +50,7 @@ func main() {
 						"geoip_country_name": value["geoip_country_name"],
 						"remote_addr":        value["remote_addr"],
 						"request_ip_sum":     value["request_ip_sum"],
+						"host":               host,
 					}
 					conn := module.Conninflux()
 					module.Writeinflux(conn, modules, fields)
@@ -72,6 +73,7 @@ func main() {
 					fields := map[string]interface{}{
 						"request_uri":     value["request_uri"],
 						"request_uri_sum": value["request_uri_sum"],
+						"host":            host,
 					}
 					conn := module.Conninflux()
 					module.Writeinflux(conn, modules, fields)
@@ -94,6 +96,7 @@ func main() {
 					fields := map[string]interface{}{
 						"http_referer":     value["http_referer"],
 						"http_referer_sum": value["http_referer_sum"],
+						"host":             host,
 					}
 					conn := module.Conninflux()
 					module.Writeinflux(conn, modules, fields)
@@ -116,6 +119,7 @@ func main() {
 					fields := map[string]interface{}{
 						"http_user_agent":     value["http_user_agent"],
 						"http_user_agent_sum": value["http_user_agent_sum"],
+						"host":                host,
 					}
 					conn := module.Conninflux()
 					module.Writeinflux(conn, modules, fields)
@@ -132,6 +136,7 @@ func main() {
 					}
 					fields := map[string]interface{}{
 						"request_sum": value["request_sum"],
+						"host":        host,
 					}
 					conn := module.Conninflux()
 					module.Writeinflux(conn, modules, fields)
@@ -148,6 +153,7 @@ func main() {
 					}
 					fields := map[string]interface{}{
 						"realtime_visitors_sum": value["realtime_visitors_sum"],
+						"host":                  host,
 					}
 					conn := module.Conninflux()
 					module.Writeinflux(conn, modules, fields)
@@ -171,6 +177,7 @@ func main() {
 					fields := map[string]interface{}{
 						"status":     value["status"],
 						"status_sum": value["status_sum"],
+						"host":       host,
 					}
 					conn := module.Conninflux()
 					module.Writeinflux(conn, modules, fields)
@@ -194,6 +201,7 @@ func main() {
 					fields := map[string]interface{}{
 						"geoip_country_code":     value["geoip_country_code"],
 						"geoip_country_code_num": value["geoip_country_code_num"],
+						"host":                   host,
 					}
 					conn := module.Conninflux()
 					module.Writeinflux(conn, modules, fields)
