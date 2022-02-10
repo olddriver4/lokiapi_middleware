@@ -1,0 +1,16 @@
+timer:
+  second: 60  #配置最好不要小于linux time_wait 回收时间
+
+influx:
+  url: 
+  user: admin
+  password: 
+  db: nginxmetrics
+  precision: ns #(use n, u, ms, s, m or h)
+
+loki:
+  url: 
+  timelimit: 5m
+  hosts: 
+    - 
+    - 
